@@ -16,15 +16,20 @@ class ScreencastImporter
 
       # Strip out the episode number from the title
       title = entry.title.gsub(/^#\d+\s/, '')
+      
+      # Find details from asciicast
+      asciicast_feed = Feedzirra::Feed.fetch_and_parse("http://asciicasts.com/full.xml")
+      asciicast = asciicast_feed.entries.select{|ascii_entry| p ascii_entry.title.downcase; ascii_entry.title.downcase == title.downcase}.first
 
       # Find or create the screencast data into our database
-      Screencast.where(video_url: entry.video_url).first_or_create(
+      screencast = Screencast.where(video_url: entry.video_url).first_or_create(
         title:        title,
         summary:      entry.summary,
         duration:     entry.duration,
         link:         entry.url,
         published_at: entry.published,
-        source:       'railscasts' # set this manually
+        source:       'railscasts', # set this manually
+        details:      asciicast ? asciicast.summary : '' # I did not get full feed for all asciicasts :(
       )
     end
 
